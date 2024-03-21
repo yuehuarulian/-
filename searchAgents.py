@@ -78,7 +78,7 @@ class SearchAgent(Agent):
     def __init__(self, fn='depthFirstSearch', prob='PositionSearchProblem', heuristic='nullHeuristic'):
         # Warning: some advanced Python magic is employed below to find the right functions and problems
 
-        # Get the search function from the name and heuristic
+        # Get the search function from the name and heuristic 从名称和启发式函数中获取搜索函数
         if fn not in dir(search):
             raise AttributeError(fn + ' is not a search function in search.py.')
         func = getattr(search, fn)
@@ -96,7 +96,7 @@ class SearchAgent(Agent):
             # Note: this bit of Python trickery combines the search algorithm and the heuristic
             self.searchFunction = lambda x: func(x, heuristic=heur)
 
-        # Get the search problem type from the name
+        # Get the search problem type from the name   从名称获取搜索问题类型
         if prob not in globals().keys() or not prob.endswith('Problem'):
             raise AttributeError(prob + ' is not a search problem type in SearchAgents.py.')
         self.searchType = globals()[prob]
@@ -272,14 +272,13 @@ def euclideanHeuristic(position, problem, info={}):
 
 class CornersProblem(search.SearchProblem):
     """
-    This search problem finds paths through all four corners of a layout.
-
-    You must select a suitable state space and successor function
+    这个搜索问题找到通过布局的四个角的路径。
+    您必须选择合适的状态空间和后继函数
     """
 
     def __init__(self, startingGameState: pacman.GameState):
         """
-        Stores the walls, pacman's starting position and corners.
+        存储墙壁、小精灵的起始位置和角落。
         """
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
@@ -295,48 +294,53 @@ class CornersProblem(search.SearchProblem):
 
     def getStartState(self):
         """
-        Returns the start state (in your state space, not the full Pacman state
-        space)
+        返回起始状态（在您的状态空间中，而不是完整的 Pacman 状态空间中）
         """
         "*** YOUR CODE HERE ***"
+        # print(type(self.startingPosition))
+        # util.pause()
+        return self.startingPosition + (False, False, False, False)
         util.raiseNotDefined()
 
     def isGoalState(self, state: Any):
         """
-        Returns whether this search state is a goal state of the problem.
+        返回该搜索状态是否是问题的目标状态。
         """
         "*** YOUR CODE HERE ***"
+        if (state[2] & state[3] & state[4] & state[5]) is True:
+            return True
+        return False
         util.raiseNotDefined()
 
     def getSuccessors(self, state: Any):
         """
-        Returns successor states, the actions they require, and a cost of 1.
-
-         As noted in search.py:
-            For a given state, this should return a list of triples, (successor,
-            action, stepCost), where 'successor' is a successor to the current
-            state, 'action' is the action required to get there, and 'stepCost'
-            is the incremental cost of expanding to that successor
+        返回后继状态、它们所需的动作和成本为 1。
+        如 search.py 中所述：
+            对于给定的状态，如果此函数返回一个三元组列表，则其中包含后继状态、到达该状态所需的动作和扩展到该后继状态的增量成本，
+            其中 'successor' 是当前状态的一个后继状态，'action' 是到达该状态所需的动作，'stepCost' 是扩展到该后继状态的增量成本
         """
-
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
+            # 如果动作合法，则将后继状态添加到后继列表中
             "*** YOUR CODE HERE ***"
+            x, y, _, _, _, _ = state
+            getcorner = list(state[2:])
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
+                nextState = (nextx, nexty)
+                for i in range(0,4):
+                    if (nextx, nexty) == self.corners[i]:
+                        getcorner[i] = True
+                cost = 1
+                successors.append((nextState + tuple(getcorner), action, cost))
 
-        self._expanded += 1 # DO NOT CHANGE
+        self._expanded += 1 # 请勿更改
         return successors
 
     def getCostOfActions(self, actions):
         """
-        Returns the cost of a particular sequence of actions.  If those actions
-        include an illegal move, return 999999.  This is implemented for you.
+        返回特定动作序列的成本。如果这些动作包括非法移动，则返回 999999。此方法已为您实现。
         """
         if actions == None: return 999999
         x,y= self.startingPosition

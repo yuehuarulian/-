@@ -140,7 +140,6 @@ def mydfs(actions, state, problem, vis):
         actions.pop()
     return False
 
-
 def depthFirstSearch(problem: SearchProblem):
     actions = []  # 动作
     start = problem.getStartState()  # 起始状态
@@ -176,23 +175,25 @@ def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
     myqueue = util.PriorityQueue()
+    actions = []
     start = problem.getStartState()  # 起始状态
     vis = {start: True}  # 标记是否已访问的字典
-    myqueue.push([start, []])
+    myqueue.push([start, [], 0], 0)  # 当前状态，活动列表，代价     优先级
     while not myqueue.isEmpty():
-        state, actions = myqueue.pop()
+        state, actions, cost = myqueue.pop()
         # 已经找到
-        if(problem.isGoalState(state)):
+        if problem.isGoalState(state):
             return actions
         successors = problem.getSuccessors(state)
         # 遍历所有方向
-        for state_t, direction, cos in successors:
+        for state_t, direction, cost_t in successors:
             # 是否已经经过
-            if vis.get(state_t, False):
+            if state_t in vis:
                 continue
-            myqueue.push([state_t, actions + [direction]])
-            vis[state_t] = True
-    return False
+            myqueue.push([state_t, actions + [direction], cost_t + cost], cost_t + cost)
+            if not problem.isGoalState(state_t):
+                vis[state_t] = True
+    return actions
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None):
@@ -205,6 +206,28 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
+    myqueue = util.PriorityQueue()
+    actions = []
+    start = problem.getStartState()  # 起始状态
+    vis = {start: True}  # 标记是否已访问的字典
+    myqueue.push([start, [], 0], 0)  # 当前状态，活动列表，代价     优先级
+    while not myqueue.isEmpty():
+        state, actions, cost = myqueue.pop()
+        # 已经找到
+        if problem.isGoalState(state):
+            return actions
+        
+        # 遍历所有方向
+        for state_t, direction, cost_t in problem.getSuccessors(state):
+            # 是否已经经过
+            if state_t in vis:
+                continue
+            
+            #状态里存储当前路径的代价，而优先队列里比较 代价+启发式函数值
+            myqueue.push([state_t, actions + [direction], cost_t + cost], cost_t + cost + heuristic(state_t, problem))
+            if not problem.isGoalState(state_t):
+                vis[state_t] = True
+    return actions
     util.raiseNotDefined()
 
 

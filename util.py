@@ -179,7 +179,7 @@ class PriorityQueue:
         self.count = 0
 
     def push(self, item, priority):
-        entry = (priority, self.count, item)  # 优先级
+        entry = (priority, self.count, item)  # 优先级，计数器，元素
         heapq.heappush(self.heap, entry)
         self.count += 1
 
