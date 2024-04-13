@@ -350,7 +350,6 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
-
 def cornersHeuristic(state: Any, problem: CornersProblem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -364,11 +363,33 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners # These are the corner coordinates
+    corners = problem.corners # These are the corner coordinates 元组
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    # 启发式函数的定义
+    # 选择最小的曼哈顿距离
+    x, y, _, _, _, _ = state
+    getcorner = list(state[2:])
+    h = 0
+    j = -1
+    while 1:
+        h1 = 999999
+        for i in range(4):
+            if getcorner[i] == True:
+                continue
+            t = util.manhattanDistance([x,y],corners[i])
+            if t < h1:
+                h1 = t
+                j = i
+        if j == -1:
+            break
+        h += h1
+        x = corners[j][0]
+        y = corners[j][1]
+        getcorner[j] = True
+        j = -1
+    return h
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -462,7 +483,33 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    # foodlocation = foodGrid.asList()
+    # if len(foodlocation) == 0:
+    #     return 0
+    # h = -1
+    # for food in foodlocation:
+    #     dist = mazeDistance(food, position, problem.startingGameState)
+    #     h = max(h,dist)
+    # return h
+    hfood = 0
+    hf_pac = 9999999
+    foodlocation = foodGrid.asList()
+    if len(foodlocation) == 0:
+        return 0
+    for i,food1 in enumerate(foodlocation):
+        # dis = util.manhattanDistance(food1,position)
+        dis = mazeDistance(food1,position,problem.startingGameState)
+        hf_pac = min(dis, hf_pac)  # 吃豆人所在位置到food最小曼哈顿距离
+    for i,food1 in enumerate(foodlocation):
+        fooddistance = util.PriorityQueue()
+        for j,food2 in enumerate(foodlocation[i + 1:]):
+            # dis = util.manhattanDistance(food1,food2)
+            dis = mazeDistance(food1,food2,problem.startingGameState)
+            fooddistance.push(dis,dis)
+        if fooddistance.isEmpty() or i > 5:
+            break
+        hfood += fooddistance.pop() # food之间最小的k-1个曼哈顿距离
+    return hfood + hf_pac
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -493,6 +540,23 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
+        # 深度优先搜索
+        myqueue = util.Queue()
+        actions = []
+        vis = {startPosition: True} # 标记是否已访问的字典
+        myqueue.push((startPosition, []))
+        while not myqueue.isEmpty():
+            (cx, cy), actions = myqueue.pop()
+            if food[cx][cy]: # 直到找到食物
+                return actions
+            for direction in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+                dx, dy = Actions.directionToVector(direction)
+                nxt = (nx, ny) = (int(cx + dx), int(cy + dy))
+                if vis.get(nxt, False) or walls[nx][ny]:
+                    continue
+                vis[nxt] = True
+                myqueue.push((nxt, actions + [direction]))
+        return actions
         util.raiseNotDefined()
 
 class AnyFoodSearchProblem(PositionSearchProblem):
