@@ -1,1 +1,3 @@
 报告/*.png
+/__pycache__
+/.vscode
