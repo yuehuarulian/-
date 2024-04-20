@@ -8,17 +8,12 @@
       "name": "Python 调试程序: 包含参数的当前文件",
       "type": "debugpy",
       "request": "launch",
-      "program": "pacman.py",
+      "program": "autograder.py",
+      // "program": "pacman.py",
       "console": "integratedTerminal",
-      "args": [
-        "-l",
-        "tinyCorners",
-        "-p",
-        "SearchAgent",
-        "-a",
-        "fn=bfs,prob=CornersProblem"
-      ]
-      // python pacman.py -l tinyCorners -p SearchAgent -a fn=bfs,prob=CornersProblem
+      "args": ["-q", "q7"]
+      // "args": ["-l", "trickySearch", "-p", "AStarFoodSearchAgent"]
+      // python autograder.py -q q7
     }
   ]
 }
