@@ -60,24 +60,21 @@ import os
 
 class GameState:
     """
-    A GameState specifies the full game state, including the food, capsules,
-    agent configurations and score changes.
+    一个 GameState 指定了完整的游戏状态，包括食物、胶囊、代理配置和分数变化。
 
-    GameStates are used by the Game object to capture the actual state of the game and
-    can be used by agents to reason about the game.
+    GameStates 被 Game 对象用于捕获游戏的实际状态，并且可以被代理用来推断游戏。
 
-    Much of the information in a GameState is stored in a GameStateData object.  We
-    strongly suggest that you access that data via the accessor methods below rather
-    than referring to the GameStateData object directly.
+    GameState 中的大部分信息存储在一个 GameStateData 对象中。我们强烈建议您通过下面的访问方法来访问该数据，
+    而不是直接引用 GameStateData 对象。
 
-    Note that in classic Pacman, Pacman is always agent 0.
+    注意，在经典的 Pacman 中，Pacman 总是代理 0。
     """
 
     ####################################################
     # Accessor methods: use these to access state data #
     ####################################################
 
-    # static variable keeps track of which states have had getLegalActions called
+    # 静态变量用于跟踪哪些状态已经调用了 getLegalActions 方法
     explored = set()
 
     def getAndResetExplored():
@@ -88,7 +85,7 @@ class GameState:
 
     def getLegalActions(self, agentIndex=0):
         """
-        Returns the legal actions for the agent specified.
+        返回指定代理的合法动作。
         """
 #        GameState.explored.add(self)
         if self.isWin() or self.isLose():
@@ -101,32 +98,32 @@ class GameState:
 
     def generateSuccessor(self, agentIndex, action):
         """
-        Returns the successor state after the specified agent takes the action.
+        返回指定代理执行动作后的后继状态。
         """
-        # Check that successors exist
+        # 检查后继状态是否存在
         if self.isWin() or self.isLose():
-            raise Exception('Can\'t generate a successor of a terminal state.')
+            raise Exception('无法生成终止状态的后继状态。')
 
-        # Copy current state
+        # 复制当前状态
         state = GameState(self)
 
-        # Let agent's logic deal with its action's effects on the board
-        if agentIndex == 0:  # Pacman is moving
+        # 让代理的逻辑处理其动作对棋盘的影响
+        if agentIndex == 0:  # Pacman 在移动
             state.data._eaten = [False for i in range(state.getNumAgents())]
             PacmanRules.applyAction(state, action)
-        else:                # A ghost is moving
+        else:                # 鬼在移动
             GhostRules.applyAction(state, action, agentIndex)
 
-        # Time passes
+        # 时间流逝
         if agentIndex == 0:
-            state.data.scoreChange += -TIME_PENALTY  # Penalty for waiting around
+            state.data.scoreChange += -TIME_PENALTY  # 等待的惩罚
         else:
             GhostRules.decrementTimer(state.data.agentStates[agentIndex])
 
-        # Resolve multi-agent effects
+        # 处理多代理影响
         GhostRules.checkDeath(state, agentIndex)
 
-        # Book keeping
+        # 记录状态
         state.data._agentMoved = agentIndex
         state.data.score += state.data.scoreChange
         GameState.explored.add(self)
@@ -138,16 +135,16 @@ class GameState:
 
     def generatePacmanSuccessor(self, action):
         """
-        Generates the successor state after the specified pacman move
+        生成指定 Pacman 移动后的后继状态
         """
         return self.generateSuccessor(0, action)
 
     def getPacmanState(self):
         """
-        Returns an AgentState object for pacman (in game.py)
+        返回 Pacman 的 AgentState 对象（在 game.py 中）
 
-        state.pos gives the current position
-        state.direction gives the travel vector
+        state.pos 给出当前位置
+        state.direction 给出移动向量
         """
         return self.data.agentStates[0].copy()
 
@@ -178,7 +175,7 @@ class GameState:
 
     def getCapsules(self):
         """
-        Returns a list of positions (x,y) of the remaining capsules.
+        返回剩余胶囊的位置（x，y）列表。
         """
         return self.data.capsules
 
@@ -187,10 +184,10 @@ class GameState:
 
     def getFood(self):
         """
-        Returns a Grid of boolean food indicator variables.
+        返回一个布尔类型的食物指示变量的 Grid。
 
-        Grids can be accessed via list notation, so to check
-        if there is food at (x,y), just call
+        可以通过列表表示法访问 Grid，所以要检查
+        是否在 (x,y) 位置有食物，只需调用
 
         currentFood = state.getFood()
         if currentFood[x][y] == True: ...
@@ -199,10 +196,10 @@ class GameState:
 
     def getWalls(self):
         """
-        Returns a Grid of boolean wall indicator variables.
+        返回一个布尔类型的墙指示变量的 Grid。
 
-        Grids can be accessed via list notation, so to check
-        if there is a wall at (x,y), just call
+        可以通过列表表示法访问 Grid，所以要检查
+        是否在 (x,y) 位置有墙，只需调用
 
         walls = state.getWalls()
         if walls[x][y] == True: ...
