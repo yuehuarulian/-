@@ -381,47 +381,49 @@ def betterEvaluationFunction(currentGameState: GameState):
     newPos = currentGameState.getPacmanPosition()
     newFood = currentGameState.getFood()
     newGhostStates = currentGameState.getGhostStates()
+    # newCapsules = currentGameState.getCapsules()
     newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
     walls = currentGameState.getWalls()
 
     # 如果不是新的ScaredTimes，则新状态为ghost：返回最低值
-
     newFood = newFood.asList()
     ghostPos = [(G.getPosition()[0], G.getPosition()[1]) for G in newGhostStates]
     scared = min(newScaredTimes) > 0
-
-
     if currentGameState.isLose():
         return float('-inf')
-
     if newPos in ghostPos:
         return float('-inf')
 
-
-    # 如果不是新的ScaredTimes，则新状态为ghost：返回最低值
-
+    # 计算食物距离和ghost距离分数
     closestFoodDist = sorted(newFood, key=lambda fDist: util.manhattanDistance(fDist, newPos))
     closestGhostDist = sorted(ghostPos, key=lambda gDist: util.manhattanDistance(gDist, newPos))
-
+    # closestCapsules = sorted(newCapsules,key=lambda cDist: util.manhattanDistance(cDist, newPos))
     score = 0
-
     fd = lambda fDis: util.manhattanDistance(fDis, newPos)
     gd = lambda gDis: util.manhattanDistance(gDis, newPos)
-
-    if gd(closestGhostDist[0]) <3:
+    # cd = lambda cDis: util.manhattanDistance(cDis, newPos)
+   
+    # 越接近鬼得分越低
+    if gd(closestGhostDist[0]) <3: 
         score-=300
     if gd(closestGhostDist[0]) <2:
         score-=1000
     if gd(closestGhostDist[0]) <1:
         return float('-inf')
-
+    
+    # 离胶囊越近得分越高
+    # if len(closestCapsules) != 0 and cd(closestCapsules[0]) <3:
+    #     score += 200
+    # if len(closestCapsules) != 0 and cd(closestCapsules[0]) <2:
+    #     score += 200
     if len(currentGameState.getCapsules()) < 2:
         score+=100
-
+    
+    # 越接近食物得分越高
     if len(closestFoodDist)==0 or len(closestGhostDist)==0 :
         score += scoreEvaluationFunction(currentGameState) + 10
     else:
-        score += (   scoreEvaluationFunction(currentGameState) + 10/fd(closestFoodDist[0]) + 1/gd(closestGhostDist[0]) + 1/gd(closestGhostDist[-1])  )
+        score += (scoreEvaluationFunction(currentGameState) + 10/fd(closestFoodDist[0]) + 1/gd(closestGhostDist[0]) + 1/gd(closestGhostDist[-1])  )
 
     return score
 
