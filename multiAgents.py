@@ -196,7 +196,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 v = max(v, min_value(state.generateSuccessor(0, action), deep, 1)) # 在下一层查找幽灵
             return v
 
-        # 从第一层开始查找，为min_value
+        # 从第一层开始查找，为max_value
         best_act = []
         best_val = -1e6
         actions = gameState.getLegalActions(0) # 0是吃豆人的代理
@@ -322,6 +322,52 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+
+
+        # 本题考虑了不是每一次ghost都能做出对ghost最好的动作，因此不是对ghost采取action后所有state的各值取最小，而是对他们求期望。
+        # 由题意，ghost采取各action概率相同，所以只需要对各state的值求平均即可。其他部分和minimax中的一致。                        
+        numAgents = gameState.getNumAgents()
+        GhostIndex = [i for i in range(1, numAgents)]
+
+        # 当前状态是否为游戏结束或者搜索到了限制层数
+        def is_over(State, deep):
+            return deep == self.depth or State.isWin() or State.isLose()
+                        
+        # 采用递归方式把ghost每个走过的状态检查一遍
+        def evg_value(state, deep, ghost):  # minimizer计算这一层的beta   alpha是上一层的alpha
+            if is_over(state, deep):
+                return self.evaluationFunction(state)
+
+            v = 0   # β初始值为无穷大
+            prob = 1 / len(state.getLegalActions(ghost))
+            for action in state.getLegalActions(ghost): # 递归的查找平均值
+                if ghost == GhostIndex[-1]: # 如果ghost==ghostindex[-1]的话，说明这一层的幽灵已经查找结束，下一层查找吃豆人
+                    v += max_value(state.generateSuccessor(ghost, action), deep + 1)
+                else:                       # 反之寻找下一个幽灵，取最小值
+                    v += evg_value(state.generateSuccessor(ghost, action), deep, ghost + 1)
+            v = v * prob
+            return v
+        
+        def max_value(state, deep):  # maximizer计算这一层的alpha    beta是上一层的beta
+            if is_over(state, deep):
+                return self.evaluationFunction(state)
+
+            v = -1e100  # α初始值为无穷小
+            for action in state.getLegalActions(0): # 递归查找最大值
+                v = max(v, evg_value(state.generateSuccessor(0, action), deep, 1)) # 在下一层查找幽灵
+            return v
+            
+        # 从第一层开始查找，为max
+        best_act = []
+        best_val = -1e6
+        actions = gameState.getLegalActions(0) # 0是吃豆人的代理
+        for act in actions:
+            val = evg_value(gameState.generateSuccessor(0, act),0,1)
+            if val > best_val:
+                best_val = val
+                best_act = act
+
+        return best_act
         util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState: GameState):
@@ -332,7 +378,53 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    newPos = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    walls = currentGameState.getWalls()
+
+    # 如果不是新的ScaredTimes，则新状态为ghost：返回最低值
+
+    newFood = newFood.asList()
+    ghostPos = [(G.getPosition()[0], G.getPosition()[1]) for G in newGhostStates]
+    scared = min(newScaredTimes) > 0
+
+
+    if currentGameState.isLose():
+        return float('-inf')
+
+    if newPos in ghostPos:
+        return float('-inf')
+
+
+    # 如果不是新的ScaredTimes，则新状态为ghost：返回最低值
+
+    closestFoodDist = sorted(newFood, key=lambda fDist: util.manhattanDistance(fDist, newPos))
+    closestGhostDist = sorted(ghostPos, key=lambda gDist: util.manhattanDistance(gDist, newPos))
+
+    score = 0
+
+    fd = lambda fDis: util.manhattanDistance(fDis, newPos)
+    gd = lambda gDis: util.manhattanDistance(gDis, newPos)
+
+    if gd(closestGhostDist[0]) <3:
+        score-=300
+    if gd(closestGhostDist[0]) <2:
+        score-=1000
+    if gd(closestGhostDist[0]) <1:
+        return float('-inf')
+
+    if len(currentGameState.getCapsules()) < 2:
+        score+=100
+
+    if len(closestFoodDist)==0 or len(closestGhostDist)==0 :
+        score += scoreEvaluationFunction(currentGameState) + 10
+    else:
+        score += (   scoreEvaluationFunction(currentGameState) + 10/fd(closestFoodDist[0]) + 1/gd(closestGhostDist[0]) + 1/gd(closestGhostDist[-1])  )
+
+    return score
+
 
 # Abbreviation
 better = betterEvaluationFunction
