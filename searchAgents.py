@@ -453,6 +453,28 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         self.searchType = FoodSearchProblem
 
+# def memoize(func):
+#     memo = {}
+#     def helper(*args):
+#         if args not in memo:
+#             memo[args] = func(*args)
+#         return memo[args]
+#     return helper
+
+# @memoize
+# def floyd(foodlocation, problem, dist):
+#     INF = 100000
+#     n = len(foodlocation)
+#     dist = [[INF] * n for _ in range(n)]  # 初始化距离矩阵
+#     for i in range(n):
+#         for j in range(n):
+#             dist[i][j] = mazeDistance(foodlocation[i], foodlocation[j], problem.startingGameState)
+#     for k in range(n):  # 计算最短路径
+#         for i in range(n):
+#             for j in range(n):
+#                 if dist[i][k] != INF and dist[k][j] != INF and dist[i][j] > (dist[i][k] + dist[k][j]):
+#                     dist[i][j] = dist[i][k] + dist[k][j]
+
 def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     Your heuristic for the FoodSearchProblem goes here.
@@ -483,33 +505,63 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
+    foodlocation = foodGrid.asList()
+    INF = 100000
+    n = len(foodlocation)
+    # dist = floyd(foodlocation, problem,dist)  # 只计算一次距离矩阵
+    if len(problem.heuristicInfo)==0:
+        # 弗洛伊德算法
+        dist = [[INF] * n for _ in range(n)]  # 初始化距离矩阵
+        for i in range(n):
+            for j in range(n):
+                dist[i][j] = mazeDistance(foodlocation[i],foodlocation[j],problem.startingGameState)
+        for k in range(n):  # 计算最短路径
+            for i in range(n):
+                for j in range(n):
+                    if dist[i][k] != INF and dist[k][j] != INF and dist[i][j] > (dist[i][k] + dist[k][j]):
+                        dist[i][j] = dist[i][k] + dist[k][j]
+        problem.heuristicInfo['dist'] = dist
+    
+    dist = problem.heuristicInfo['dist']
+
+    # 依次加入食物，每次更新f[S][i]
+    # f[S | 1 << j][j] = min(f[S | 1 << j][i], f[S][i] + dist[i][j])
+    print(n)
+    f =  [[INF] * n for _ in range(1<<n)]
+    f[0] = [0] * n
+    for i in range(n):
+        f[1<<i][i] = mazeDistance(position,foodlocation[i],problem.startingGameState)
+    for S in range(1,1<<n):  # 1~z^n-1
+        for j in range(n):  # 0~n-1
+            if S & 1<<j:  # 如果S第j位置为1就continue
+                continue
+            for i in range(n):
+                if S & 1<<i:  # S第i位置必须有才能更新
+                    f[S | 1 << j][j] = min(f[S | 1 << j][i], f[S][i] + dist[i][j])
+    hfood = INF
+    for k in range(n):
+        hfood = min(hfood, f[(1 << n) - 1][k])
+    return hfood
+
+    # hfood = 0
+    # hf_pac = 9999999
     # foodlocation = foodGrid.asList()
     # if len(foodlocation) == 0:
     #     return 0
-    # h = -1
-    # for food in foodlocation:
-    #     dist = mazeDistance(food, position, problem.startingGameState)
-    #     h = max(h,dist)
-    # return h
-    hfood = 0
-    hf_pac = 9999999
-    foodlocation = foodGrid.asList()
-    if len(foodlocation) == 0:
-        return 0
-    for i,food1 in enumerate(foodlocation):
-        # dis = util.manhattanDistance(food1,position)
-        dis = mazeDistance(food1,position,problem.startingGameState)
-        hf_pac = min(dis, hf_pac)  # 吃豆人所在位置到food最小曼哈顿距离
-    for i,food1 in enumerate(foodlocation):
-        fooddistance = util.PriorityQueue()
-        for j,food2 in enumerate(foodlocation[i + 1:]):
-            # dis = util.manhattanDistance(food1,food2)
-            dis = mazeDistance(food1,food2,problem.startingGameState)
-            fooddistance.push(dis,dis)
-        if fooddistance.isEmpty() or i > 5:
-            break
-        hfood += fooddistance.pop() # food之间最小的k-1个曼哈顿距离
-    return hfood + hf_pac
+    # for i,food1 in enumerate(foodlocation):
+    #     # dis = util.manhattanDistance(food1,position)
+    #     dis = mazeDistance(food1,position,problem.startingGameState)
+    #     hf_pac = min(dis, hf_pac)  # 吃豆人所在位置到food最小曼哈顿距离
+    # for i,food1 in enumerate(foodlocation):
+    #     fooddistance = util.PriorityQueue()
+    #     for j,food2 in enumerate(foodlocation[i + 1:]):
+    #         # dis = util.manhattanDistance(food1,food2)
+    #         dis = mazeDistance(food1,food2,problem.startingGameState)
+    #         fooddistance.push(dis,dis)
+    #     if fooddistance.isEmpty() or i > 5:
+    #         break
+    #     hfood += fooddistance.pop() # food之间最小的k-1个曼哈顿距离
+    # return hfood + hf_pac
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
